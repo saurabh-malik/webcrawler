@@ -1,0 +1,14 @@
+{
+  "name": "webcrawler",
+  "version": "1.0.0",
+  "description": "A Webcrawler",
+  "private": true,
+  "author": "Saurabh Malik",
+  "license": "MIT",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "dependencies": {
+    "amqplib": "^0.5.1"
+  }
+}
