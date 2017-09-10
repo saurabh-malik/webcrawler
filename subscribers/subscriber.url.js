@@ -1,5 +1,7 @@
 "use strict";
 
+var urlVisitor = require('../crawler/pagevisitor')();
+
 var URLSub = function(AMQPConn){
 
   var URLSubObj = {};
@@ -32,11 +34,13 @@ var URLSub = function(AMQPConn){
   }
 
   function processURL(msg){
-    console.log("New URL for crawling received")
-    work(msg, function(ok) {
+    work(msg, function(pagesToVisit, ok) {
       try {
-        if (ok)
+        if (ok){
+          console.log("Number of links for further visit: " + pagesToVisit.length)
+          console.log(pagesToVisit)
           subCh.ack(msg);
+        }
         else
           subCh.reject(msg, true);
       } catch (e) {
@@ -46,8 +50,9 @@ var URLSub = function(AMQPConn){
   }
 
   function work(msg, cb) {
-    console.log("PDF processing of ", msg.content.toString());
-    cb(true);
+    var resource = JSON.parse(msg.content.toString());
+    console.log("URL for crawling: ", resource.resourceURL);
+    urlVisitor.visitPage(resource.resourceURL, cb);
   }
 
   function closeOnErr(err) {
