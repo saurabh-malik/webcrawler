@@ -1,4 +1,11 @@
 var amqp = require('amqplib/callback_api');
+var mongoose = require('mongoose');
+
+mongoose.Promise = global.Promise;
+// connect to MongoDB
+mongoose.connect('mongodb://localhost/resource-content')
+  .then(() =>  console.log('connection succesful'))
+  .catch((err) => console.error(err));
 
 var amqpConn = null;
 amqp.connect("amqp://localhost" + "?heartbeat=60", function(err, conn) {

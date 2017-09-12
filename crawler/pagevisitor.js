@@ -4,6 +4,8 @@ var cheerio = require('cheerio');
 var URL = require('url-parse');
 
 
+
+
 var Visitor = function(){
 
 	var VisitorObj = {};
@@ -17,7 +19,7 @@ var Visitor = function(){
 	var baseUrl;
 
 
-	VisitorObj.visitPage = function(url, callback) {
+	VisitorObj.visitPage = function(url, callback,cb) {
 
 		//url = START_URL;
 		baseUrl = url;
@@ -25,20 +27,22 @@ var Visitor = function(){
 	  pagesVisited[url] = true;
 	  numPagesVisited++;
 
+	  var $;
+
 	  // Make the request
 	  console.log("Visiting page " + url);
 	  request(url, function(error, response, body) {
 	     // Check status code (200 is HTTP OK)
 	     console.log("Status code: " + response.statusCode);
 	     if(response.statusCode !== 200) {
-	       callback(pagesToVisit, false);
+	       callback(url,pagesToVisit,body, false, cb);
 	       return;
 	     }
 	     // Parse the document body
-	     var $ = cheerio.load(body);
-	     console.log("body: "+$)
+	     $ = cheerio.load(body);
+	     console.log("body: ")
 	     collectInternalLinks($);
-	     callback(pagesToVisit, true);
+	     callback(url,pagesToVisit, body, true,cb);
 	  });
 	}
 
@@ -47,10 +51,7 @@ var Visitor = function(){
 	    console.log("Found " + relativeLinks.length + " relative links on page");
 	    relativeLinks.each(function() {
 	    	var nextURL = $(this).attr('href');
-	    	if(nextURL in pagesVisited){
-	    		console.log("Already added: " + nextURL)
-	    	}
-	    	else{
+	    	if(!(nextURL in pagesVisited)){
 	    		pagesVisited[nextURL] = true;
 	    		pagesToVisit.push(nextURL);
 	    	}
