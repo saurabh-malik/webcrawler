@@ -34,9 +34,11 @@ var Visitor = function(){
 	  console.log("Visiting page " + url);
 	  request(url, function(error, response, body) {
 	     // Check status code (200 is HTTP OK)
+	     var rsCont = new RSContent();
+	     rsCont.resourceURL = url;
 	     console.log("Status code: " + response.statusCode);
 	     if(response.statusCode !== 200) {
-	       callback(url,pagesToVisit,body, false, cb);
+	       callback(rsCont, pagesToVisit, false, cb);
 	       return;
 	     }
 	     // Parse the document body
@@ -44,9 +46,7 @@ var Visitor = function(){
 	     collectInternalLinks($);
 	     var title = $("title").text();
 	     console.log("Page Title- " + title);
-	     var rsCont = new RSContent();
 	     rsCont.resourceContentName = title;
-	     rsCont.resourceURL = url;
 	     rsCont.content = body;
 	     if(parentPath==''){
 	     	rsCont.sitePath = ",home,";
