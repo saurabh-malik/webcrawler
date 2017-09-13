@@ -45,7 +45,7 @@ var URLSub = function(AMQPConn){
       resourceAdded = {};
       var resourceToCrawl = JSON.parse(msg.content.toString());
 
-      resourceToVisit.push(resourceToCrawl.resourceURL);
+      resourceToVisit.push({url:resourceToCrawl.resourceURL, parentPath: ''});
       resourceDomain = resourceToCrawl.resource;
       crawlingWork(function(){console.log("Ack msg");subCh.ack(msg);});
     }catch (e) {
@@ -55,16 +55,16 @@ var URLSub = function(AMQPConn){
   }
 
   function crawlingWork(cb) {
-    var urlToCrawl = resourceToVisit.pop();
-    if(urlToCrawl){
-      console.log("URL for crawling: ", urlToCrawl);
-      if(urlToCrawl in resourceVisited){
-        console.log("Resource already visited: " + urlToCrawl);
+    var objToCrawl = resourceToVisit.pop();
+    if(objToCrawl){
+      if(objToCrawl.url in resourceVisited){
+        console.log("Resource already visited: " + objToCrawl.url);
         crawlingWork(cb);
       }
       else{
-        resourceVisited[urlToCrawl] = true;
-        urlVisitor.visitPage(urlToCrawl, handleResourceCrawling, cb);
+        console.log("URL for crawling: ", objToCrawl.url);
+        resourceVisited[objToCrawl.url] = true;
+        urlVisitor.visitPage(objToCrawl.url, objToCrawl.parentPath, handleResourceCrawling, cb);
       }
     }
     else{
@@ -72,16 +72,14 @@ var URLSub = function(AMQPConn){
     }
   }
 
-  function handleResourceCrawling(resourceUrl,pagesToVisit,content, ok, cb){
+  function handleResourceCrawling(rsContent,pagesToVisit, ok, cb){
     if(ok){
-      var rsContent = new RSContent();
-      rsContent.resourceURL = resourceUrl;
-      rsContent.content = content;
       pagesToVisit.forEach(function(url){
           var urlDomainName = extractHostname(url);
+          rsContent.resource = extractHostname(rsContent.resourceURL);
           if(resourceDomain == urlDomainName){
             if(!(url in resourceAdded)){
-              resourceToVisit.push(url);
+              resourceToVisit.push({url:url, parentPath:rsContent.sitePath});
               resourceAdded[url] = true;
             }
           }
@@ -106,7 +104,9 @@ var URLSub = function(AMQPConn){
 
   function updateResourceContent(rsContent, cb){
     var condition = {resourceURL: rsContent.resourceURL}
-    , update = {content: rsContent.content, externalResources: rsContent.externalResources};
+    , update = {content: rsContent.content, externalResources: rsContent.externalResources,
+      resourceContentName: rsContent.resourceContentName, sitePath: rsContent.sitePath,
+      resource: rsContent.resource};
 
     RSContent.findOneAndUpdate(condition, update, {upsert:true}, cb);
   }
@@ -138,6 +138,10 @@ var URLSub = function(AMQPConn){
       hostname = hostname.split(':')[0];
       //find & remove "?"
       hostname = hostname.split('?')[0];
+      //find & remove "wwww."
+      if (url.indexOf("www.") > -1) {
+        hostname = hostname.split("www.")[1];
+      }
 
       return hostname;
   }

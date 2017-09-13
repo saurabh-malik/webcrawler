@@ -2,6 +2,7 @@
 var request = require('request');
 var cheerio = require('cheerio');
 var URL = require('url-parse');
+var RSContent = require('../models/resourcecontent.model');
 
 
 
@@ -19,7 +20,7 @@ var Visitor = function(){
 	var baseUrl;
 
 
-	VisitorObj.visitPage = function(url, callback,cb) {
+	VisitorObj.visitPage = function(url, parentPath, callback,cb) {
 
 		//url = START_URL;
 		baseUrl = url;
@@ -40,14 +41,24 @@ var Visitor = function(){
 	     }
 	     // Parse the document body
 	     $ = cheerio.load(body);
-	     console.log("body: ")
 	     collectInternalLinks($);
-	     callback(url,pagesToVisit, body, true,cb);
+	     var title = $("title").text();
+	     console.log("Page Title- " + title);
+	     var rsCont = new RSContent();
+	     rsCont.resourceContentName = title;
+	     rsCont.resourceURL = url;
+	     rsCont.content = body;
+	     if(parentPath==''){
+	     	rsCont.sitePath = ",home,";
+	     }else{
+	     	rsCont.sitePath = parentPath+title+",";
+	     }
+	     callback(rsCont, pagesToVisit, true, cb);
 	  });
 	}
 
 	function collectInternalLinks($) {
-	    var relativeLinks = $("a[href^='http://']");
+	    var relativeLinks = $("a[href^='http://'], a[href^='https://']");
 	    console.log("Found " + relativeLinks.length + " relative links on page");
 	    relativeLinks.each(function() {
 	    	var nextURL = $(this).attr('href');
@@ -56,6 +67,10 @@ var Visitor = function(){
 	    		pagesToVisit.push(nextURL);
 	    	}
 	    });
+	}
+
+	function getResourceName($){
+
 	}
 	return VisitorObj;
 }

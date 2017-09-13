@@ -3,10 +3,12 @@ var Schema = mongoose.Schema;
 
 // Web Resource schema
 var RSContentSchema = new Schema({
-	resourceName: String,
+	resource: String,
+	resourceContentName: String,
 	resourceURL: String,
 	content: String,
 	images: [String],
+	sitePath: String,
 	externalResources: [String],
 	createdAt: { type: Date, default: Date.now }
 });
